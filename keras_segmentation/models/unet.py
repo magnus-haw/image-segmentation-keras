@@ -107,6 +107,50 @@ def _unet(n_classes, encoder, l1_skip_conn=True, input_height=416,
 
     return model
 
+def _unet_896(n_classes, encoder, l1_skip_conn=True, input_height=416,
+          input_width=608): 
+    img_input, levels = encoder(
+    input_height=input_height, input_width=input_width)
+    [f1, f2, f3, f4, f5] = levels
+    o = f4
+    o = (ZeroPadding2D((1, 1), data_format=IMAGE_ORDERING))(o)
+    o = (Conv2D(512, (3, 3), padding='valid' , activation='relu' , data_format=IMAGE_ORDERING))(o)
+    o = (BatchNormalization())(o)
+
+    o = (UpSampling2D((2, 2), data_format=IMAGE_ORDERING))(o)
+    o = (concatenate([o, f3], axis=MERGE_AXIS))
+    o = (ZeroPadding2D((1, 1), data_format=IMAGE_ORDERING))(o)
+    o = (Conv2D(256, (3, 3), padding='valid', activation='relu' , data_format=IMAGE_ORDERING))(o)
+    o = (BatchNormalization())(o)
+
+    o = (UpSampling2D((2, 2), data_format=IMAGE_ORDERING))(o)
+    o = (concatenate([o, f2], axis=MERGE_AXIS))
+    o = (ZeroPadding2D((1, 1), data_format=IMAGE_ORDERING))(o)
+    o = (Conv2D(128, (3, 3), padding='valid' , activation='relu' , data_format=IMAGE_ORDERING))(o)
+    o = (BatchNormalization())(o)
+
+    o = (UpSampling2D((2, 2), data_format=IMAGE_ORDERING))(o)
+
+    if l1_skip_conn:
+        o = (concatenate([o, f1], axis=MERGE_AXIS))
+
+    o = (ZeroPadding2D((1, 1), data_format=IMAGE_ORDERING))(o)
+    o = (Conv2D(64, (3, 3), padding='valid', activation='relu', data_format=IMAGE_ORDERING))(o)
+    o = (BatchNormalization())(o)
+
+    #this is copied from the layers before l1_skip 
+    o = (UpSampling2D((2, 2), data_format=IMAGE_ORDERING))(o)
+    #o = (concatenate([o, f2], axis=MERGE_AXIS))  This is a skip, removed
+    o = (ZeroPadding2D((1, 1), data_format=IMAGE_ORDERING))(o)
+    o = (Conv2D(64, (3, 3), padding='valid' , activation='relu' , data_format=IMAGE_ORDERING))(o)  #64 filters (half the previous)
+    o = (BatchNormalization())(o)
+
+    o = Conv2D(n_classes, (3, 3), padding='same',
+               data_format=IMAGE_ORDERING)(o)
+
+    model = get_segmentation_model(img_input, o)
+
+    return model
 
 def unet(n_classes, input_height=416, input_width=608, encoder_level=3, channels=3):
 
@@ -118,7 +162,7 @@ def unet(n_classes, input_height=416, input_width=608, encoder_level=3, channels
 
 def vgg_unet(n_classes, input_height=416, input_width=608, encoder_level=3, channels=3):
 
-    model = _unet(n_classes, get_vgg_encoder,
+    model = _unet_896(n_classes, get_vgg_encoder,
                   input_height=input_height, input_width=input_width, channels=channels)
     model.model_name = "vgg_unet"
     return model
