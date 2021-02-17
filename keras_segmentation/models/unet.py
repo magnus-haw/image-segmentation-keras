@@ -108,9 +108,9 @@ def _unet(n_classes, encoder, l1_skip_conn=True, input_height=416,
     return model
 
 def _unet_896(n_classes, encoder, l1_skip_conn=True, input_height=416,
-          input_width=608): 
+          input_width=608, channels=3): 
     img_input, levels = encoder(
-    input_height=input_height, input_width=input_width)
+    input_height=input_height, input_width=input_width, channels= channels)
     [f1, f2, f3, f4, f5] = levels
     o = f4
     o = (ZeroPadding2D((1, 1), data_format=IMAGE_ORDERING))(o)
