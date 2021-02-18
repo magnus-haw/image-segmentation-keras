@@ -86,7 +86,7 @@ def fcn_8(n_classes, encoder=vanilla_encoder, input_height=416,
     o = Add()([o2, o])
 
     o = Conv2DTranspose(n_classes, kernel_size=(16, 16),  strides=(
-        8, 8), use_bias=False, data_format=IMAGE_ORDERING)(o)
+        8, 8), use_bias=False, data_format=IMAGE_ORDERING, padding='same')(o)
 
     model = get_segmentation_model(img_input, o)
     model.model_name = "fcn_8"
